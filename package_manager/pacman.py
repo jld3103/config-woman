@@ -10,7 +10,7 @@ class Pacman(PackageManager):
         packages = []
         for line in subprocess.check_output(['pacman', '-Q']).decode('utf-8').split('\n'):
             if len(line) > 0:
-                packages.append(str(line.split(' ')[0]))
+                packages.append(line.split(' ')[0])
         return packages
 
     def is_package_explicitly_installed(self, package) -> bool:
