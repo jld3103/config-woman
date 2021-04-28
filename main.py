@@ -26,6 +26,13 @@ config_directory_option = click.option(
     default=default_config_directory,
     help='Config directory location',
 )
+no_confirm_option = click.option(
+    '-y',
+    '--no-confirm',
+    'no_confirm',
+    is_flag=True,
+    help='Confirm package install/remove actions',
+)
 
 
 @click.group()
@@ -63,7 +70,8 @@ def system_save(verbose, config_directory):
 @click.command(name='apply')
 @verbose_option
 @config_directory_option
-def system_apply(verbose, config_directory):
+@no_confirm_option
+def system_apply(verbose, config_directory, no_confirm):
     setup_logging(verbose)
 
     package_manager = get_system_package_manager()
@@ -73,13 +81,13 @@ def system_apply(verbose, config_directory):
     logging.info(
         'Detected {num} packages that are listed in the config but not installed. Proceeding to install them.'.format(
             num=len(listed_not_installed_packages)))
-    package_manager.install_packages(listed_not_installed_packages)
+    package_manager.install_packages(listed_not_installed_packages, no_confirm)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
     logging.info(
         'Detected {num} packages that are not listed in the config but installed. Proceeding to remove them.'.format(
             num=len(installed_not_listed_packages)))
-    package_manager.remove_packages(installed_not_listed_packages)
+    package_manager.remove_packages(installed_not_listed_packages, no_confirm)
 
 
 @click.group()

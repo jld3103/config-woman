@@ -12,9 +12,9 @@ class PackageManager(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def install_packages(self, packages: [str]):
+    def install_packages(self, packages: [str], no_confirm: bool):
         pass
 
     @abc.abstractmethod
-    def remove_packages(self, packages: [str]):
+    def remove_packages(self, packages: [str], no_confirm: bool):
         pass

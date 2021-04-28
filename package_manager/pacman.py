@@ -19,8 +19,14 @@ class Pacman(PackageManager):
                 return 'Explicitly installed' in line
         return True
 
-    def install_packages(self, packages: [str]):
-        run_as_root('pacman -S {package}'.format(package=' '.join(packages)))
+    def install_packages(self, packages: [str], no_confirm: bool):
+        if no_confirm:
+            run_as_root('pacman -S {package} --noconfirm'.format(package=' '.join(packages)))
+        else:
+            run_as_root('pacman -S {package}'.format(package=' '.join(packages)))
 
-    def remove_packages(self, packages: [str]):
-        run_as_root('pacman -Rns {package}'.format(package=' '.join(packages)))
+    def remove_packages(self, packages: [str], no_confirm: bool):
+        if no_confirm:
+            run_as_root('pacman -Rns {package} --noconfirm'.format(package=' '.join(packages)))
+        else:
+            run_as_root('pacman -Rns {package}'.format(package=' '.join(packages)))

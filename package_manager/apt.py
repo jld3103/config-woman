@@ -15,8 +15,8 @@ class Apt(PackageManager):
     def is_package_explicitly_installed(self, package) -> bool:
         pass
 
-    def install_packages(self, packages: [str]):
+    def install_packages(self, packages: [str], no_confirm: bool):
         pass
 
-    def remove_packages(self, packages: [str]):
+    def remove_packages(self, packages: [str], no_confirm: bool):
         pass
