@@ -27,22 +27,29 @@ fi
 for file in "${files[@]}"; do
   name="$(basename "$file")"
   dir="$(dirname "$file")"
-  os="$(echo "$name" | cut -d "_" -f 2)"
-  base=""
-  if [[ "$os" == "arch" ]]; then
-    base="FROM $arch_image
-$pacman_base"
-  elif [[ "$os" == "manjaro" ]]; then
-    base="FROM $manjaro_image
-$pacman_base"
-  elif [[ "$os" == "debian" ]]; then
-    base="FROM $debian_image
-$apt_base"
-  elif [[ "$os" == "ubuntu" ]]; then
-    base="FROM $ubuntu_image
-$apt_base"
+  manager="$(echo "$name" | cut -d "_" -f 2)"
+  oses=()
+  if [[ "$manager" == "pacman" ]]; then
+    oses=(arch manjaro)
+  elif [[ "$manager" == "apt" ]]; then
+    oses=(debian ubuntu)
   fi
-  cat >"$dir/Dockerfile" <<EOF
+  for os in "${oses[@]}"; do
+    base=""
+    if [[ "$os" == "arch" ]]; then
+      base="FROM $arch_image
+$pacman_base"
+    elif [[ "$os" == "manjaro" ]]; then
+      base="FROM $manjaro_image
+$pacman_base"
+    elif [[ "$os" == "debian" ]]; then
+      base="FROM $debian_image
+$apt_base"
+    elif [[ "$os" == "ubuntu" ]]; then
+      base="FROM $ubuntu_image
+$apt_base"
+    fi
+    cat >"$dir/Dockerfile" <<EOF
 $base
 WORKDIR /app
 ENV VIRTUAL_ENV="/app/venv"
@@ -54,8 +61,10 @@ RUN pip install -r requirements.txt
 COPY $name $name
 CMD ["pytest", "$name"]
 EOF
-  image_name="config-woman-${name//.py/}"
-  docker build "$dir" -t "$image_name" -q
-  rm -rf "$dir/Dockerfile"
-  docker run --rm "$image_name"
+    image_name="config-woman-${name//.py/}"
+    docker build "$dir" -t "$image_name" -q
+    rm -rf "$dir/Dockerfile"
+    echo "$(tput bold)$(tput setaf 4)Running on $os with $manager$(tput sgr0)"
+    docker run --rm "$image_name"
+  done
 done

@@ -1,1 +1,0 @@
-test_arch_info.py
