@@ -54,7 +54,8 @@ RUN pip install -r requirements.txt
 COPY $name $name
 CMD ["pytest", "$name"]
 EOF
-  docker build "$dir" -t "$name" -q
+  image_name="config-woman-${name//.py/}"
+  docker build "$dir" -t "$image_name" -q
   rm -rf "$dir/Dockerfile"
-  docker run --rm "$name"
+  docker run --rm "$image_name"
 done
