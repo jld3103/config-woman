@@ -1,3 +1,5 @@
+import sys
+
 import click
 import logging
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
@@ -10,7 +12,12 @@ def setup_logging(verbose: bool):
     level = logging.INFO
     if verbose:
         level = logging.DEBUG
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=level)
+    logging.basicConfig(
+        stream=sys.stdout,
+        format='%(asctime)s %(levelname)s: %(message)s',
+        datefmt='%m/%d/%Y %H:%M:%S',
+        level=level
+    )
 
 
 verbose_option = click.option(
