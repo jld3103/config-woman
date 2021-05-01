@@ -85,16 +85,22 @@ def system_apply(verbose, config_directory, no_confirm):
     config = load_system_config(config_directory)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
-    logging.info(
-        'Detected {num} packages that are listed in the config but not installed. Proceeding to install them.'.format(
-            num=len(listed_not_installed_packages)))
-    package_manager.install_packages(listed_not_installed_packages, no_confirm)
+    if len(listed_not_installed_packages) == 0:
+        logging.info('Detected no packages that are listed in the config but not installed.')
+    else:
+        logging.info(
+            'Detected {num} packages that are listed in the config but not installed. Proceeding to install them.'.format(
+                num=len(listed_not_installed_packages)))
+        package_manager.install_packages(listed_not_installed_packages, no_confirm)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
-    logging.info(
-        'Detected {num} packages that are not listed in the config but installed. Proceeding to remove them.'.format(
-            num=len(installed_not_listed_packages)))
-    package_manager.remove_packages(installed_not_listed_packages, no_confirm)
+    if len(installed_not_listed_packages) == 0:
+        logging.info('Detected no packages that are not listed in the config but installed.')
+    else:
+        logging.info(
+            'Detected {num} packages that are not listed in the config but installed. Proceeding to remove them.'.format(
+                num=len(installed_not_listed_packages)))
+        package_manager.remove_packages(installed_not_listed_packages, no_confirm)
 
 
 @click.group()
