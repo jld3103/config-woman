@@ -7,6 +7,8 @@ from defaults import default_config_directory
 
 def run_as_root(cmd):
     logging.info('Running as root: {cmd}'.format(cmd=cmd))
+    if os.geteuid() == 0:
+        return os.system(cmd)
     if shutil.which('sudo'):
         return os.system('sudo {cmd}'.format(cmd=cmd))
     if shutil.which('doas'):
