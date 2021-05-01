@@ -19,7 +19,7 @@ apt_base="RUN apt-get update && apt-get install python3 python3-venv -y
 RUN ln -sf \$(which python3) /usr/bin/python"
 
 if [ $# -eq 0 ]; then
-  files=(tests/*/test_*.py)
+  files=(tests/test_*.py)
 else
   files=("$@")
 fi
@@ -27,12 +27,16 @@ fi
 for file in "${files[@]}"; do
   name="$(basename "$file")"
   dir="$(dirname "$file")"
-  manager="$(echo "$name" | cut -d "_" -f 2)"
+  type="$(echo "$name" | rev | cut -d "_" -f 1 | rev | sed "s/.py//")"
   oses=()
-  if [[ "$manager" == "pacman" ]]; then
+  if [[ "$type" == "all" ]]; then
+    oses=(arch manjaro debian ubuntu)
+  elif [[ "$type" == "pacman" ]]; then
     oses=(arch manjaro)
-  elif [[ "$manager" == "apt" ]]; then
+  elif [[ "$type" == "apt" ]]; then
     oses=(debian ubuntu)
+  else
+    oses=("$type")
   fi
   for os in "${oses[@]}"; do
     base=""
@@ -64,7 +68,7 @@ EOF
     image_name="config-woman-${name//.py/}"
     docker build "$dir" -t "$image_name" -q
     rm -rf "$dir/Dockerfile"
-    echo "$(tput bold)$(tput setaf 4)Running on $os with $manager$(tput sgr0)"
+    echo "$(tput bold)$(tput setaf 4)Running on $os$(tput sgr0)"
     docker run --rm "$image_name"
   done
 done
