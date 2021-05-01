@@ -9,7 +9,7 @@ class Apt(PackageManager):
 
     def get_packages(self) -> [str]:
         packages = []
-        for line in subprocess.check_output(['apt', 'list']).decode('utf-8').split('\n'):
+        for line in subprocess.check_output(['apt', 'list', '--installed']).decode('utf-8').split('\n'):
             if len(line) > 0:
                 packages.append(line.split(' ')[0].split('/')[0])
         return packages
