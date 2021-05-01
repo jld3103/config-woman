@@ -1,8 +1,7 @@
 #!/bin/bash
 source venv/bin/activate
-set -e
 pip freeze | grep -v "config-woman" >requirements.txt
-docker build . -t config-woman-source -q
+docker build . -t config-woman-source -q >/dev/null &
 
 arch_image="archlinux:latest"
 manjaro_image="manjarolinux/base:latest"
@@ -10,7 +9,7 @@ debian_image="debian:latest"
 ubuntu_image="ubuntu:latest"
 
 for image in $arch_image $manjaro_image $debian_image $ubuntu_image; do
-  docker pull $image -q &
+  docker pull $image -q >/dev/null &
 done
 wait
 
@@ -66,9 +65,25 @@ COPY $name $name
 CMD ["pytest", "$name"]
 EOF
     image_name="config-woman-${name//.py/}"
-    docker build "$dir" -t "$image_name" -q
+    docker build "$dir" -t "$image_name" -q >/dev/null
     rm -rf "$dir/Dockerfile"
-    echo "$(tput bold)$(tput setaf 4)Running on $os$(tput sgr0)"
-    docker run --rm "$image_name"
+    echo "$(tput bold)$(tput setaf 4)Running $name on $os$(tput sgr0)"
+    (
+      tmp_file=$(mktemp)
+      docker run --rm "$image_name" >"$tmp_file" 2>&1
+      # shellcheck disable=SC2181
+      if [[ $? != 0 ]]; then
+        echo "$(tput bold)$(tput setaf 1)Failed $name on $os:$(tput sgr0)"
+        cat "$tmp_file"
+        touch /tmp/failure
+      fi
+      rm "$tmp_file"
+    ) &
   done
 done
+wait
+
+if [[ -f /tmp/failure ]]; then
+  rm /tmp/failure
+  exit 1
+fi
