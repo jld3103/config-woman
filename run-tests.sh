@@ -58,6 +58,7 @@ WORKDIR /app
 ENV VIRTUAL_ENV="/app/venv"
 ENV PATH="\$VIRTUAL_ENV/bin:\$PATH"
 ENV CONFIG_DIR="/app"
+ENV PRESET="system"
 RUN python -m venv ./venv
 COPY --from=config-woman-source /app /app
 RUN pip install -r requirements.txt

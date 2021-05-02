@@ -40,6 +40,11 @@ no_confirm_option = click.option(
     is_flag=True,
     help='Confirm package install/remove actions',
 )
+preset_argument = click.argument(
+    'preset',
+    envvar='PRESET',
+    default='default'
+)
 
 
 @click.group()
@@ -55,34 +60,36 @@ def system():
 @click.command(name='save')
 @verbose_option
 @config_directory_option
-def system_save(verbose, config_directory):
+@preset_argument
+def system_save(verbose, config_directory, preset):
     setup_logging(verbose)
 
     package_manager = get_system_package_manager()
-    config = load_system_config(config_directory)
+    config = load_system_config(config_directory, preset)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
     logging.info('Detected {num} packages that are installed but not listed in the config.'.format(
         num=len(installed_not_listed_packages)))
     missing_config = Config(installed_not_listed_packages)
-    write_missing_system_config(config_directory, missing_config)
+    write_missing_system_config(config_directory, preset, missing_config)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
     logging.info('Detected {num} packages that are listed in the config but not installed.'.format(
         num=len(listed_not_installed_packages)))
     redundant_config = Config(listed_not_installed_packages)
-    write_redundant_system_config(config_directory, redundant_config)
+    write_redundant_system_config(config_directory, preset, redundant_config)
 
 
 @click.command(name='apply')
 @verbose_option
 @config_directory_option
 @no_confirm_option
-def system_apply(verbose, config_directory, no_confirm):
+@preset_argument
+def system_apply(verbose, config_directory, no_confirm, preset):
     setup_logging(verbose)
 
     package_manager = get_system_package_manager()
-    config = load_system_config(config_directory)
+    config = load_system_config(config_directory, preset)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
     if len(listed_not_installed_packages) == 0:
