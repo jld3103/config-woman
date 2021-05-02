@@ -22,14 +22,20 @@ def load_system_config(config_directory, preset):
 
 def write_missing_system_config(config_directory, preset, missing_config):
     file_path = os.path.join(config_directory, '{preset}_missing.yaml'.format(preset=preset))
-    with open(file_path, 'w') as file:
-        file.write(yaml.dump({'packages': missing_config.packages}, default_flow_style=False))
+    if len(missing_config.packages) > 0:
+        with open(file_path, 'w') as file:
+            file.write(yaml.dump({'packages': missing_config.packages}, default_flow_style=False))
+    elif os.path.exists(file_path):
+        os.remove(file_path)
 
 
 def write_redundant_system_config(config_directory, preset, redundant_config):
     file_path = os.path.join(config_directory, '{preset}_redundant.yaml'.format(preset=preset))
-    with open(file_path, 'w') as file:
-        file.write(yaml.dump({'packages': redundant_config.packages}, default_flow_style=False))
+    if len(redundant_config.packages) > 0:
+        with open(file_path, 'w') as file:
+            file.write(yaml.dump({'packages': redundant_config.packages}, default_flow_style=False))
+    elif os.path.exists(file_path):
+        os.remove(file_path)
 
 
 class Config:

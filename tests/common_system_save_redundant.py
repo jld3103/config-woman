@@ -8,9 +8,7 @@ from package_manager.utils import get_system_package_manager
 
 def common_redundant(package):
     subprocess.run(['python', 'main.py', 'system', 'save'])
-    with open('system_redundant.yaml', 'r') as file:
-        document = yaml.load(file.read(), Loader=yaml.FullLoader)
-        assert len(document['packages']) == 0
+    assert not os.path.exists('system_redundant.yaml')
 
     with open('system.yaml', 'w') as file:
         file.write(yaml.dump({'packages': ['idonotexist']}))
@@ -22,9 +20,7 @@ def common_redundant(package):
     with open('system.yaml', 'w') as file:
         file.write(yaml.dump({'packages': []}))
     subprocess.run(['python', 'main.py', 'system', 'save'])
-    with open('system_redundant.yaml', 'r') as file:
-        document = yaml.load(file.read(), Loader=yaml.FullLoader)
-        assert len(document['packages']) == 0
+    assert not os.path.exists('system_redundant.yaml')
 
     get_system_package_manager().install_packages([package], True)
     os.remove('system.yaml')

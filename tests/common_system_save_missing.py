@@ -30,3 +30,9 @@ def common_missing(package1, package2):
     with open('system_missing.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         assert len(document['packages']) == 1
+
+    os.remove('system.yaml')
+    subprocess.run(['python', 'main.py', 'system', 'save'])
+    os.rename('system_missing.yaml', 'system.yaml')
+    subprocess.run(['python', 'main.py', 'system', 'save'])
+    assert not os.path.exists('system_missing.yaml')
