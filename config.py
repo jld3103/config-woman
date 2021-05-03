@@ -15,17 +15,15 @@ def load_system_config(config_directory, preset):
     with open(file_path, 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         packages = []
-        for package in document['packages']:
-            packages.append(package)
         files = []
-        for f in document['files']:
-            files.append(f)
         excludes = []
-        # Might not be in the config file when the user renamed the *_missing.yaml file
+        if 'packages' in document:
+            packages = document['packages']
+        if 'files' in document:
+            files = document['files']
         if 'excludes' in document:
-            for exclude in document['excludes']:
-                excludes.append(exclude)
-        return Config(packages=packages, files=files, excludes=excludes)
+            excludes = document['excludes']
+        return Config(packages, files, excludes)
 
 
 def write_missing_system_config(config_directory, preset, missing_config):
