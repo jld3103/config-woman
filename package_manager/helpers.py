@@ -6,8 +6,6 @@ from package_manager.file import File
 
 
 def get_etc_files(excludes: [str]):
-    # Some dirs to exclude by default
-    excludes += ['/etc/ca-certificates', '/etc/ssl']
     all_files = []
     for root, sub_dirs, files in os.walk('/etc'):
         for file in files:
@@ -23,11 +21,18 @@ def get_etc_files(excludes: [str]):
     return all_files
 
 
-def generate_modified_files_list(etc_files: [str], registered_files: {}, hash_method: str) -> [File]:
+def generate_modified_files_list(excludes: [str], registered_files: {}, hash_method: str) -> [File]:
     modified_files = []
-    new_files = etc_files.copy()
+    new_files = get_etc_files(excludes).copy()
 
     for path in registered_files:
+        skip = False
+        for exclude in excludes:
+            if path.startswith(exclude):
+                skip = True
+                break
+        if skip:
+            continue
         if path in new_files:
             new_files.remove(path)
 

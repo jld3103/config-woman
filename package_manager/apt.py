@@ -3,7 +3,7 @@ import os
 import subprocess
 
 from package_manager.file import File
-from package_manager.helpers import get_etc_files, generate_modified_files_list
+from package_manager.helpers import generate_modified_files_list
 from package_manager.package_manager import PackageManager
 
 
@@ -41,7 +41,6 @@ class Apt(PackageManager):
             os.system(f'apt-get purge {" ".join(packages)}')
 
     def get_modified_files(self, excludes: [str]) -> [File]:
-        etc_files = get_etc_files(excludes + [])
         registered_files = {}
         for root, _, files in os.walk('/var/lib/dpkg/info'):
             for file_name in files:
@@ -52,4 +51,4 @@ class Apt(PackageManager):
                                 path = '/' + line.split('  ')[1]
                                 if os.path.exists(path):
                                     registered_files[path] = line.split('  ')[0]
-        return generate_modified_files_list(etc_files, registered_files, 'md5')
+        return generate_modified_files_list(excludes + [], registered_files, 'md5')

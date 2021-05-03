@@ -5,9 +5,10 @@ import sys
 import click
 
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
-from defaults import default_config_directory
+from defaults import default_config_directory, default_excludes
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
     get_base_distribution
+from package_manager.file import File
 
 
 def setup_logging(verbose: bool):
@@ -56,7 +57,6 @@ def cli():
 
 @click.group()
 def system():
-    setup_logging(False)
     if not os.geteuid() == 0:
         logging.fatal('You need to be root to run any system command')
         exit(1)
@@ -75,14 +75,19 @@ def system_save(verbose, config_directory, preset):
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
     logging.info(
         f'Detected {len(installed_not_listed_packages)} packages that are installed but not listed in the config.')
-    missing_config = Config(installed_not_listed_packages)
-    write_missing_system_config(config_directory, preset, missing_config)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
     logging.info(
         f'Detected {len(listed_not_installed_packages)} packages that are listed in the config but not installed.')
-    redundant_config = Config(listed_not_installed_packages)
-    write_redundant_system_config(config_directory, preset, redundant_config)
+
+    modified_files: [File] = package_manager.get_modified_files(config.excludes + default_excludes)
+    logging.info(f'Detected {len(modified_files)} files that are modified from the default system state.')
+    paths = []
+    for file in modified_files:
+        paths.append(file.path)
+
+    write_missing_system_config(config_directory, preset, Config(installed_not_listed_packages, paths, []))
+    write_redundant_system_config(config_directory, preset, Config(listed_not_installed_packages, [], []))
 
 
 @click.command(name='apply')

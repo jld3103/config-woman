@@ -4,7 +4,7 @@ import os.path
 import subprocess
 
 from package_manager.file import File
-from package_manager.helpers import generate_modified_files_list, get_etc_files
+from package_manager.helpers import generate_modified_files_list
 from package_manager.package_manager import PackageManager
 
 
@@ -46,7 +46,6 @@ class Pacman(PackageManager):
             os.system(f'pacman -Rns {" ".join(packages)}')
 
     def get_modified_files(self, excludes: [str]) -> [File]:
-        etc_files = get_etc_files(excludes + ['/etc/pacman.d/gnupg'])
         registered_files = {}
         for root, _, files in os.walk('/var/lib/pacman/local'):
             for file_name in files:
@@ -61,4 +60,4 @@ class Pacman(PackageManager):
                                     is_dir = os.path.isdir(os.path.realpath(path))
                                 if path.startswith('/etc') and not is_dir:
                                     registered_files[path] = line.split(' ')[-1].split('=')[1]
-        return generate_modified_files_list(etc_files, registered_files, 'sha256')
+        return generate_modified_files_list(excludes + ['/etc/pacman.d/gnupg'], registered_files, 'sha256')

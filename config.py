@@ -10,14 +10,22 @@ def load_system_config(config_directory, preset):
             os.makedirs(config_directory)
         # Create an empty file to start with
         with open(file_path, 'w') as file:
-            file.write(yaml.dump({'packages': []}, default_flow_style=False))
-        return Config([])
+            file.write(yaml.dump({'packages': [], 'files': [], 'excludes': []}, default_flow_style=False))
+        return Config([], [], [])
     with open(file_path, 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         packages = []
         for package in document['packages']:
             packages.append(package)
-        return Config(packages=packages)
+        files = []
+        for f in document['files']:
+            files.append(f)
+        excludes = []
+        # Might not be in the config file when the user renamed the *_missing.yaml file
+        if 'excludes' in document:
+            for exclude in document['excludes']:
+                excludes.append(exclude)
+        return Config(packages=packages, files=files, excludes=excludes)
 
 
 def write_missing_system_config(config_directory, preset, missing_config):
@@ -33,11 +41,14 @@ def write_redundant_system_config(config_directory, preset, redundant_config):
 def _write_system_config(file_path, config):
     if len(config.packages) > 0:
         with open(file_path, 'w') as file:
-            file.write(yaml.dump({'packages': config.packages}, default_flow_style=False))
+            # Don't save excludes, as that does not make sense
+            file.write(yaml.dump({'packages': config.packages, 'files': config.files}, default_flow_style=False))
     elif os.path.exists(file_path):
         os.remove(file_path)
 
 
 class Config:
-    def __init__(self, packages: [str]):
+    def __init__(self, packages: [str], files: [str], excludes: [str]):
         self.packages = packages
+        self.files = files
+        self.excludes = excludes
