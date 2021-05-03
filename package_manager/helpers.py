@@ -16,8 +16,7 @@ def get_etc_files(excludes: [str]):
             for exclude in excludes:
                 if file_path.startswith(exclude):
                     do_exclude = True
-                    logging.debug('Excluding {file_path} because of exclude rule {exclude}'.format(file_path=file_path,
-                                                                                                   exclude=exclude))
+                    logging.debug(f'Excluding {file_path} because of exclude rule {exclude}')
                     break
             if not do_exclude:
                 all_files.append(file_path)
@@ -40,7 +39,7 @@ def generate_modified_files_list(etc_files: [str], registered_files: {}, hash_me
         elif hash_method == 'md5':
             file_hash = hashlib.md5()
         else:
-            logging.fatal('Unsupported hash method: {hash_method}'.format(hash_method=hash_method))
+            logging.fatal(f'Unsupported hash method: {hash_method}')
             exit(1)
         with open(path, 'rb') as file:
             fb = file.read(65536)

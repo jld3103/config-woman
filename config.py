@@ -4,7 +4,7 @@ import yaml
 
 
 def load_system_config(config_directory, preset):
-    file_path = os.path.join(config_directory, '{preset}.yaml'.format(preset=preset))
+    file_path = os.path.join(config_directory, f'{preset}.yaml')
     if not os.path.exists(file_path):
         if not os.path.exists(config_directory):
             os.makedirs(config_directory)
@@ -21,19 +21,19 @@ def load_system_config(config_directory, preset):
 
 
 def write_missing_system_config(config_directory, preset, missing_config):
-    file_path = os.path.join(config_directory, '{preset}_missing.yaml'.format(preset=preset))
-    if len(missing_config.packages) > 0:
-        with open(file_path, 'w') as file:
-            file.write(yaml.dump({'packages': missing_config.packages}, default_flow_style=False))
-    elif os.path.exists(file_path):
-        os.remove(file_path)
+    file_path = os.path.join(config_directory, f'{preset}_missing.yaml')
+    _write_system_config(file_path, missing_config)
 
 
 def write_redundant_system_config(config_directory, preset, redundant_config):
-    file_path = os.path.join(config_directory, '{preset}_redundant.yaml'.format(preset=preset))
-    if len(redundant_config.packages) > 0:
+    file_path = os.path.join(config_directory, f'{preset}_redundant.yaml')
+    _write_system_config(file_path, redundant_config)
+
+
+def _write_system_config(file_path, config):
+    if len(config.packages) > 0:
         with open(file_path, 'w') as file:
-            file.write(yaml.dump({'packages': redundant_config.packages}, default_flow_style=False))
+            file.write(yaml.dump({'packages': config.packages}, default_flow_style=False))
     elif os.path.exists(file_path):
         os.remove(file_path)
 

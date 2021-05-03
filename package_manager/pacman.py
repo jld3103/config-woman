@@ -35,15 +35,15 @@ class Pacman(PackageManager):
 
     def install_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            os.system('pacman -S {package} --noconfirm'.format(package=' '.join(packages)))
+            os.system(f'pacman -S {" ".join(packages)} --noconfirm')
         else:
-            os.system('pacman -S {package}'.format(package=' '.join(packages)))
+            os.system(f'pacman -S {" ".join(packages)}')
 
     def remove_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            os.system('pacman -Rns {package} --noconfirm'.format(package=' '.join(packages)))
+            os.system(f'pacman -Rns {" ".join(packages)} --noconfirm')
         else:
-            os.system('pacman -Rns {package}'.format(package=' '.join(packages)))
+            os.system(f'pacman -Rns {" ".join(packages)}')
 
     def get_modified_files(self, excludes: [str]) -> [File]:
         etc_files = get_etc_files(excludes + ['/etc/pacman.d/gnupg'])

@@ -30,15 +30,15 @@ class Apt(PackageManager):
 
     def install_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            os.system('apt-get install {package} -y'.format(package=' '.join(packages)))
+            os.system(f'apt-get install {" ".join(packages)} -y')
         else:
-            os.system('apt-get install {package}'.format(package=' '.join(packages)))
+            os.system(f'apt-get install {" ".join(packages)}')
 
     def remove_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            os.system('apt-get purge {package} -y'.format(package=' '.join(packages)))
+            os.system(f'apt-get purge {" ".join(packages)} -y')
         else:
-            os.system('apt-get purge {package}'.format(package=' '.join(packages)))
+            os.system(f'apt-get purge {" ".join(packages)}')
 
     def get_modified_files(self, excludes: [str]) -> [File]:
         etc_files = get_etc_files(excludes + [])

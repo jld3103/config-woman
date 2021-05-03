@@ -73,14 +73,14 @@ def system_save(verbose, config_directory, preset):
     config = load_system_config(config_directory, preset)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
-    logging.info('Detected {num} packages that are installed but not listed in the config.'.format(
-        num=len(installed_not_listed_packages)))
+    logging.info(
+        f'Detected {len(installed_not_listed_packages)} packages that are installed but not listed in the config.')
     missing_config = Config(installed_not_listed_packages)
     write_missing_system_config(config_directory, preset, missing_config)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
-    logging.info('Detected {num} packages that are listed in the config but not installed.'.format(
-        num=len(listed_not_installed_packages)))
+    logging.info(
+        f'Detected {len(listed_not_installed_packages)} packages that are listed in the config but not installed.')
     redundant_config = Config(listed_not_installed_packages)
     write_redundant_system_config(config_directory, preset, redundant_config)
 
@@ -101,8 +101,8 @@ def system_apply(verbose, config_directory, no_confirm, preset):
         logging.info('Detected no packages that are listed in the config but not installed.')
     else:
         logging.info(
-            'Detected {num} packages that are listed in the config but not installed. Proceeding to install them.'.format(
-                num=len(listed_not_installed_packages)))
+            f'Detected {len(listed_not_installed_packages)} packages that are listed in the config but not installed. '
+            f'Proceeding to install them.')
         package_manager.install_packages(listed_not_installed_packages, no_confirm)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
@@ -110,8 +110,8 @@ def system_apply(verbose, config_directory, no_confirm, preset):
         logging.info('Detected no packages that are not listed in the config but installed.')
     else:
         logging.info(
-            'Detected {num} packages that are not listed in the config but installed. Proceeding to remove them.'.format(
-                num=len(installed_not_listed_packages)))
+            f'Detected {len(installed_not_listed_packages)} packages that are not listed in the config but installed. '
+            f'Proceeding to remove them.')
         package_manager.remove_packages(installed_not_listed_packages, no_confirm)
 
 
