@@ -3,7 +3,7 @@ import subprocess
 
 import yaml
 
-from package_manager.utils import get_system_package_manager
+from helpers import get_system_package_manager
 
 
 def common_redundant(package):

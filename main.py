@@ -1,11 +1,13 @@
+import logging
+import os
 import sys
 
 import click
-import logging
+
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
 from defaults import default_config_directory
-from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages
-from package_manager.utils import get_system_package_manager, get_base_distribution
+from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
+    get_base_distribution
 
 
 def setup_logging(verbose: bool):
@@ -54,7 +56,10 @@ def cli():
 
 @click.group()
 def system():
-    pass
+    setup_logging(False)
+    if not os.geteuid() == 0:
+        logging.fatal('You need to be root to run any system command')
+        exit(1)
 
 
 @click.command(name='save')

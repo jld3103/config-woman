@@ -1,7 +1,11 @@
 import functools
+import gzip
+import os.path
 import subprocess
+
+from package_manager.file import File
+from package_manager.helpers import generate_modified_files_list, get_etc_files
 from package_manager.package_manager import PackageManager
-from root import run_as_root
 
 
 class Pacman(PackageManager):
@@ -31,12 +35,30 @@ class Pacman(PackageManager):
 
     def install_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            run_as_root('pacman -S {package} --noconfirm'.format(package=' '.join(packages)))
+            os.system('pacman -S {package} --noconfirm'.format(package=' '.join(packages)))
         else:
-            run_as_root('pacman -S {package}'.format(package=' '.join(packages)))
+            os.system('pacman -S {package}'.format(package=' '.join(packages)))
 
     def remove_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            run_as_root('pacman -Rns {package} --noconfirm'.format(package=' '.join(packages)))
+            os.system('pacman -Rns {package} --noconfirm'.format(package=' '.join(packages)))
         else:
-            run_as_root('pacman -Rns {package}'.format(package=' '.join(packages)))
+            os.system('pacman -Rns {package}'.format(package=' '.join(packages)))
+
+    def get_modified_files(self, excludes: [str]) -> [File]:
+        etc_files = get_etc_files(excludes + ['/etc/pacman.d/gnupg'])
+        registered_files = {}
+        for root, _, files in os.walk('/var/lib/pacman/local'):
+            for file_name in files:
+                if file_name == 'mtree':
+                    with gzip.open(os.path.join(root, file_name)) as mtree_file:
+                        for line in mtree_file.read().decode('utf-8').split('\n'):
+                            if line.startswith('./'):
+                                path = line.split(' ')[0][1:]
+                                is_dir = 'type=dir' in line
+                                is_link = 'type=link' in line
+                                if is_link:
+                                    is_dir = os.path.isdir(os.path.realpath(path))
+                                if path.startswith('/etc') and not is_dir:
+                                    registered_files[path] = line.split(' ')[-1].split('=')[1]
+        return generate_modified_files_list(etc_files, registered_files, 'sha256')

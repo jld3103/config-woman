@@ -1,7 +1,10 @@
-import subprocess
-from package_manager.package_manager import PackageManager
-from root import run_as_root
 import functools
+import os
+import subprocess
+
+from package_manager.file import File
+from package_manager.helpers import get_etc_files, generate_modified_files_list
+from package_manager.package_manager import PackageManager
 
 
 class Apt(PackageManager):
@@ -27,12 +30,26 @@ class Apt(PackageManager):
 
     def install_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            run_as_root('apt-get install {package} -y'.format(package=' '.join(packages)))
+            os.system('apt-get install {package} -y'.format(package=' '.join(packages)))
         else:
-            run_as_root('apt-get install {package}'.format(package=' '.join(packages)))
+            os.system('apt-get install {package}'.format(package=' '.join(packages)))
 
     def remove_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
-            run_as_root('apt-get purge {package} -y'.format(package=' '.join(packages)))
+            os.system('apt-get purge {package} -y'.format(package=' '.join(packages)))
         else:
-            run_as_root('apt-get purge {package}'.format(package=' '.join(packages)))
+            os.system('apt-get purge {package}'.format(package=' '.join(packages)))
+
+    def get_modified_files(self, excludes: [str]) -> [File]:
+        etc_files = get_etc_files(excludes + [])
+        registered_files = {}
+        for root, _, files in os.walk('/var/lib/dpkg/info'):
+            for file_name in files:
+                if file_name.endswith('md5sums'):
+                    with open(os.path.join(root, file_name)) as md5sums_file:
+                        for line in md5sums_file.read().split('\n'):
+                            if len(line) > 0:
+                                path = '/' + line.split('  ')[1]
+                                if os.path.exists(path):
+                                    registered_files[path] = line.split('  ')[0]
+        return generate_modified_files_list(etc_files, registered_files, 'md5')

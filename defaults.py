@@ -1,4 +1,5 @@
 import os
+
 import appdirs
 
 default_config_directory = ""
