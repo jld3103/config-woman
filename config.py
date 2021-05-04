@@ -10,17 +10,18 @@ def load_system_config(config_directory, preset):
             os.makedirs(config_directory)
         # Create an empty file to start with
         with open(file_path, 'w') as file:
-            file.write(yaml.dump({'packages': [], 'files': [], 'exclude_files': []}, default_flow_style=False))
+            file.write(yaml.dump({'packages': [], 'files': {}, 'exclude_files': []}, default_flow_style=False))
         return Config([], [], [])
     with open(file_path, 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         packages = []
-        files = []
+        files = {}
         exclude_files = []
         if 'packages' in document:
             packages = document['packages']
         if 'files' in document:
-            files = document['files']
+            for path in document['files']:
+                files[path] = document['files'][path]
         if 'exclude_files' in document:
             exclude_files = document['exclude_files']
         return Config(packages, files, exclude_files)
@@ -46,7 +47,7 @@ def _write_system_config(file_path, config):
 
 
 class Config:
-    def __init__(self, packages: [str], files: [str], exclude_files: [str]):
+    def __init__(self, packages: [str], files: {}, exclude_files: [str]):
         self.packages = packages
         self.files = files
         self.exclude_files = exclude_files

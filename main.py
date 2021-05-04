@@ -82,12 +82,17 @@ def system_save(verbose, config_directory, preset):
 
     modified_files: [File] = package_manager.get_modified_files(config.exclude_files + default_exclude_files)
     logging.info(f'Detected {len(modified_files)} files that are modified from the default system state.')
-    paths = []
+    files = {}
     for file in modified_files:
         if file.path not in config.files:
-            paths.append(file.path)
+            try:
+                stat_info = os.stat(file.path, follow_symlinks=False)
+                files[file.path] = f'{stat_info.st_uid}:{stat_info.st_gid}:{oct(stat_info.st_mode)[-3:]}'
+            except FileNotFoundError:
+                logging.fatal(f'Could not find: {file.path}. It is very likely a dead symlink')
+                exit(1)
 
-    write_missing_system_config(config_directory, preset, Config(installed_not_listed_packages, paths, []))
+    write_missing_system_config(config_directory, preset, Config(installed_not_listed_packages, files, []))
     write_redundant_system_config(config_directory, preset, Config(listed_not_installed_packages, [], []))
 
 
