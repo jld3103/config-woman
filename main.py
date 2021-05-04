@@ -84,7 +84,8 @@ def system_save(verbose, config_directory, preset):
     logging.info(f'Detected {len(modified_files)} files that are modified from the default system state.')
     paths = []
     for file in modified_files:
-        paths.append(file.path)
+        if file.path not in config.files:
+            paths.append(file.path)
 
     write_missing_system_config(config_directory, preset, Config(installed_not_listed_packages, paths, []))
     write_redundant_system_config(config_directory, preset, Config(listed_not_installed_packages, [], []))

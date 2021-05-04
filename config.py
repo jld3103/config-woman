@@ -37,7 +37,7 @@ def write_redundant_system_config(config_directory, preset, redundant_config):
 
 
 def _write_system_config(file_path, config):
-    if len(config.packages) > 0:
+    if len(config.packages) > 0 or len(config.files) > 0:
         with open(file_path, 'w') as file:
             # Don't save exclude_files, as that does not make sense
             file.write(yaml.dump({'packages': config.packages, 'files': config.files}, default_flow_style=False))
