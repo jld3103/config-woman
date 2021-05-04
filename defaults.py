@@ -9,4 +9,4 @@ if os.getenv('CONFIG_DIR') is not None:
 else:
     default_config_directory = os.path.join(appdirs.user_config_dir(), 'config-woman')
 
-default_excludes = ['/etc/ca-certificates', '/etc/ssl', '/etc/.updated']
+default_exclude_files = ['/etc/ca-certificates', '/etc/ssl', '/etc/.updated']

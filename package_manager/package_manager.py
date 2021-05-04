@@ -22,5 +22,5 @@ class PackageManager(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_modified_files(self, excludes: [str]) -> [File]:
+    def get_modified_files(self, exclude_files: [str]) -> [File]:
         pass

@@ -5,30 +5,30 @@ import os
 from package_manager.file import File
 
 
-def get_etc_files(excludes: [str]):
+def get_etc_files(exclude_files: [str]):
     all_files = []
     for root, sub_dirs, files in os.walk('/etc'):
         for file in files:
             file_path = os.path.join(root, file)
             do_exclude = False
-            for exclude in excludes:
-                if file_path.startswith(exclude):
+            for exclude_file in exclude_files:
+                if file_path.startswith(exclude_file):
                     do_exclude = True
-                    logging.debug(f'Excluding {file_path} because of exclude rule {exclude}')
+                    logging.debug(f'Excluding {file_path} because of exclude rule {exclude_file}')
                     break
             if not do_exclude:
                 all_files.append(file_path)
     return all_files
 
 
-def generate_modified_files_list(excludes: [str], registered_files: {}, hash_method: str) -> [File]:
+def generate_modified_files_list(exclude_files: [str], registered_files: {}, hash_method: str) -> [File]:
     modified_files = []
-    new_files = get_etc_files(excludes).copy()
+    new_files = get_etc_files(exclude_files).copy()
 
     for path in registered_files:
         skip = False
-        for exclude in excludes:
-            if path.startswith(exclude):
+        for exclude_file in exclude_files:
+            if path.startswith(exclude_file):
                 skip = True
                 break
         if skip:

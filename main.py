@@ -5,7 +5,7 @@ import sys
 import click
 
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
-from defaults import default_config_directory, default_excludes
+from defaults import default_config_directory, default_exclude_files
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
     get_base_distribution
 from package_manager.file import File
@@ -80,7 +80,7 @@ def system_save(verbose, config_directory, preset):
     logging.info(
         f'Detected {len(listed_not_installed_packages)} packages that are listed in the config but not installed.')
 
-    modified_files: [File] = package_manager.get_modified_files(config.excludes + default_excludes)
+    modified_files: [File] = package_manager.get_modified_files(config.exclude_files + default_exclude_files)
     logging.info(f'Detected {len(modified_files)} files that are modified from the default system state.')
     paths = []
     for file in modified_files:
