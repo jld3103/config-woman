@@ -2,13 +2,14 @@ import functools
 import os
 import subprocess
 
-from package_manager.file import File
-from package_manager.helpers import generate_modified_files_list
 from package_manager.package_manager import PackageManager
 
 
 class Apt(PackageManager):
     name = "apt"
+    exclude_files = []
+    hash_method = 'md5'
+    updates_fetched = False
 
     def get_packages(self) -> [str]:
         packages = []
@@ -29,6 +30,7 @@ class Apt(PackageManager):
         return packages
 
     def install_packages(self, packages: [str], no_confirm: bool):
+        self.fetch_updates()
         if no_confirm:
             os.system(f'apt-get install {" ".join(packages)} -y')
         else:
@@ -40,7 +42,12 @@ class Apt(PackageManager):
         else:
             os.system(f'apt-get purge {" ".join(packages)}')
 
-    def get_modified_files(self, exclude_files: [str]) -> [File]:
+    def fetch_updates(self):
+        if not self.updates_fetched:
+            os.system('apt-get update')
+            self.updates_fetched = True
+
+    def get_registered_files(self) -> {}:
         registered_files = {}
         for root, _, files in os.walk('/var/lib/dpkg/info'):
             for file_name in files:
@@ -51,4 +58,4 @@ class Apt(PackageManager):
                                 path = '/' + line.split('  ')[1]
                                 if os.path.exists(path):
                                     registered_files[path] = line.split('  ')[0]
-        return generate_modified_files_list(exclude_files + [], registered_files, 'md5')
+        return registered_files

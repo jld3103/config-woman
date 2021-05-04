@@ -7,8 +7,7 @@ import click
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
 from defaults import default_config_directory, default_exclude_files
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
-    get_base_distribution
-from package_manager.file import File
+    get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, used_exclude_files
 
 
 def setup_logging(verbose: bool):
@@ -80,20 +79,49 @@ def system_save(verbose, config_directory, preset):
     logging.info(
         f'Detected {len(listed_not_installed_packages)} packages that are listed in the config but not installed.')
 
-    modified_files: [File] = package_manager.get_modified_files(config.exclude_files + default_exclude_files)
-    logging.info(f'Detected {len(modified_files)} files that are modified from the default system state.')
-    files = {}
-    for file in modified_files:
-        if file.path not in config.files:
-            try:
-                stat_info = os.stat(file.path, follow_symlinks=False)
-                files[file.path] = f'{stat_info.st_uid}:{stat_info.st_gid}:{oct(stat_info.st_mode)[-3:]}'
-            except FileNotFoundError:
-                logging.fatal(f'Could not find: {file.path}. It is very likely a dead symlink')
-                exit(1)
+    modified_not_listed_files: {} = get_modified_not_listed_files(
+        config,
+        default_exclude_files + config.exclude_files + package_manager.exclude_files,
+        package_manager.get_registered_files(),
+        package_manager.hash_method,
+    )
+    logging.info(
+        f'Detected {len(modified_not_listed_files)} files that are modified but not listed in the config.')
 
-    write_missing_system_config(config_directory, preset, Config(installed_not_listed_packages, files, []))
-    write_redundant_system_config(config_directory, preset, Config(listed_not_installed_packages, [], []))
+    listed_not_modified_files: {} = get_listed_not_modified_files(
+        config,
+        default_exclude_files + config.exclude_files + package_manager.exclude_files,
+        package_manager.get_registered_files(),
+        package_manager.hash_method,
+    )
+    logging.info(
+        f'Detected {len(listed_not_modified_files)} files that are listed in the config but not modified.')
+
+    listed_not_used_exclude_files = []
+    for exclude_file in config.exclude_files:
+        if exclude_file not in list(dict.fromkeys(used_exclude_files)):
+            listed_not_used_exclude_files.append(exclude_file)
+    logging.info(
+        f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
+
+    write_missing_system_config(
+        config_directory,
+        preset,
+        Config(
+            installed_not_listed_packages,
+            modified_not_listed_files,
+            [],
+        ),
+    )
+    write_redundant_system_config(
+        config_directory,
+        preset,
+        Config(
+            listed_not_installed_packages,
+            listed_not_modified_files,
+            listed_not_used_exclude_files,
+        ),
+    )
 
 
 @click.command(name='apply')

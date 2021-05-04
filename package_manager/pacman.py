@@ -3,13 +3,14 @@ import gzip
 import os.path
 import subprocess
 
-from package_manager.file import File
-from package_manager.helpers import generate_modified_files_list
 from package_manager.package_manager import PackageManager
 
 
 class Pacman(PackageManager):
     name = "pacman"
+    exclude_files = ['/etc/pacman.d/gnupg']
+    hash_method = 'sha256'
+    updates_fetched = False
 
     def get_packages(self) -> [str]:
         packages = []
@@ -34,6 +35,7 @@ class Pacman(PackageManager):
         return packages
 
     def install_packages(self, packages: [str], no_confirm: bool):
+        self.fetch_updates()
         if no_confirm:
             os.system(f'pacman -S {" ".join(packages)} --noconfirm')
         else:
@@ -45,7 +47,12 @@ class Pacman(PackageManager):
         else:
             os.system(f'pacman -Rns {" ".join(packages)}')
 
-    def get_modified_files(self, exclude_files: [str]) -> [File]:
+    def fetch_updates(self):
+        if not self.updates_fetched:
+            os.system('pacman -Sy')
+            self.updates_fetched = True
+
+    def get_registered_files(self) -> {}:
         registered_files = {}
         for root, _, files in os.walk('/var/lib/pacman/local'):
             for file_name in files:
@@ -59,5 +66,8 @@ class Pacman(PackageManager):
                                 if is_link:
                                     is_dir = os.path.isdir(os.path.realpath(path))
                                 if path.startswith('/etc') and not is_dir:
-                                    registered_files[path] = line.split(' ')[-1].split('=')[1]
-        return generate_modified_files_list(exclude_files + ['/etc/pacman.d/gnupg'], registered_files, 'sha256')
+                                    if is_link:
+                                        registered_files[path] = ''
+                                    else:
+                                        registered_files[path] = line.split(' ')[-1].split('=')[1]
+        return registered_files

@@ -1,9 +1,25 @@
 import abc
 
-from package_manager.file import File
-
 
 class PackageManager(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def exclude_files(self) -> [str]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def hash_method(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def updates_fetched(self) -> bool:
+        pass
 
     @abc.abstractmethod
     def get_packages(self) -> [str]:
@@ -22,5 +38,9 @@ class PackageManager(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_modified_files(self, exclude_files: [str]) -> [File]:
+    def fetch_updates(self):
+        pass
+
+    @abc.abstractmethod
+    def get_registered_files(self) -> {}:
         pass
