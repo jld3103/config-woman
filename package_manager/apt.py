@@ -3,6 +3,7 @@ import os
 import subprocess
 
 from package_manager.package_manager import PackageManager
+from utils import file_exists
 
 
 class Apt(PackageManager):
@@ -56,6 +57,6 @@ class Apt(PackageManager):
                         for line in md5sums_file.read().split('\n'):
                             if len(line) > 0:
                                 path = '/' + line.split('  ')[1]
-                                if os.path.exists(path):
+                                if file_exists(path, follow_symlinks=False):
                                     registered_files[path] = line.split('  ')[0]
         return registered_files

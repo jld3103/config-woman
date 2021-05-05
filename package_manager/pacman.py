@@ -4,6 +4,7 @@ import os.path
 import subprocess
 
 from package_manager.package_manager import PackageManager
+from utils import file_exists
 
 
 class Pacman(PackageManager):
@@ -65,7 +66,7 @@ class Pacman(PackageManager):
                                 is_link = 'type=link' in line
                                 if is_link:
                                     is_dir = os.path.isdir(os.path.realpath(path))
-                                if path.startswith('/etc') and not is_dir:
+                                if path.startswith('/etc') and not is_dir and file_exists(path, follow_symlinks=False):
                                     if is_link:
                                         registered_files[path] = ''
                                     else:

@@ -8,6 +8,7 @@ import distro
 from config import Config
 from package_manager.apt import Apt
 from package_manager.pacman import Pacman
+from utils import file_exists
 
 used_exclude_files = []
 
@@ -136,7 +137,7 @@ def get_listed_not_modified_files(config: Config, exclude_files: [str], register
             not_modified_files.append(path)
             continue
 
-        if not os.path.exists(path):
+        if not file_exists(path, follow_symlinks=False):
             not_modified_files.append(path)
 
         if path in registered_files:
@@ -182,9 +183,11 @@ def save_system_files(config_directory: str, preset: str, files: {}):
         local_dir = os.path.dirname(local_path)
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
-        shutil.copy(path, local_path, follow_symlinks=False)
-        # So we are not annoying with the permissions for users
-        os.chown(local_path, stat_info.st_uid, stat_info.st_gid)
+        if file_exists(path, follow_symlinks=False):
+            shutil.copy(path, local_path, follow_symlinks=False)
+            if not os.path.islink(local_path):
+                # So we are not annoying with the permissions for users
+                os.chown(local_path, stat_info.st_uid, stat_info.st_gid)
 
 
 def apply_system_files(config_directory: str, preset: str, files: {}):
@@ -197,19 +200,17 @@ def apply_system_files(config_directory: str, preset: str, files: {}):
     for path in files:
         logging.debug(f'Applying {path}')
         local_path = os.path.join(files_path, path[1:])
-        try:
-            os.lstat(local_path)
+        if file_exists(local_path, follow_symlinks=False):
             uid = int(files[path].split(':')[0])
             gid = int(files[path].split(':')[1])
             mode = int('100' + files[path].split(':')[2], 8)
-            try:
-                os.lstat(local_path)
+            if file_exists(path, follow_symlinks=False):
                 os.remove(path)
-            except FileNotFoundError:
+            else:
                 logging.debug(f'File {path} was not available on the system')
             shutil.copy(local_path, path, follow_symlinks=False)
             os.chown(path, uid, gid)
             os.chmod(path, mode)
-        except FileNotFoundError:
+        else:
             logging.fatal(f'Could not find required {preset}-files{path} file')
             exit(1)
