@@ -36,7 +36,6 @@ def get_system_package_manager():
 
 
 def get_installed_not_listed_packages(listed_packages: [str], package_manager) -> [str]:
-    logging.debug('Detecting packages that are installed but not listed in the config')
     installed_not_listed_packages: [str] = []
     installed_packages = package_manager.get_packages()
     for installed_package in installed_packages:
@@ -51,7 +50,6 @@ def get_installed_not_listed_packages(listed_packages: [str], package_manager) -
 
 
 def get_listed_not_installed_packages(listed_packages: [str], package_manager) -> [str]:
-    logging.debug('Detecting packages that are listed in the config but not installed')
     listed_not_installed_packages: [str] = []
     installed_packages = package_manager.get_packages()
     for listed_package in listed_packages:
