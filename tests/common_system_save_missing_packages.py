@@ -6,7 +6,7 @@ import yaml
 from helpers import get_system_package_manager
 
 
-def common_missing(package1, package2):
+def common_missing_packages(package1, package2):
     subprocess.run(['python', 'main.py', 'system', 'save'])
     with open('system_missing.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)

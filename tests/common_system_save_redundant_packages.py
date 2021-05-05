@@ -6,7 +6,7 @@ import yaml
 from helpers import get_system_package_manager
 
 
-def common_redundant(package):
+def common_redundant_packages(package):
     subprocess.run(['python', 'main.py', 'system', 'save'])
     assert not os.path.exists('system_redundant.yaml')
 
