@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import shutil
 
 import distro
 
@@ -167,3 +168,48 @@ def verify_hash(path, should_hash_sum, hash_method):
             fb = file.read(65536)
     is_hash_sum = file_hash.hexdigest()
     return is_hash_sum == should_hash_sum
+
+
+def save_system_files(config_directory: str, preset: str, files: {}):
+    files_path = os.path.join(config_directory, f'{preset}-files')
+    if os.path.exists(files_path):
+        shutil.rmtree(files_path)
+    os.mkdir(files_path)
+    stat_info = os.stat(os.path.join(config_directory, '..'))
+    for path in files:
+        logging.debug(f'Saving {path}')
+        local_path = os.path.join(files_path, path[1:])
+        local_dir = os.path.dirname(local_path)
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+        shutil.copy(path, local_path, follow_symlinks=False)
+        # So we are not annoying with the permissions for users
+        os.chown(local_path, stat_info.st_uid, stat_info.st_gid)
+
+
+def apply_system_files(config_directory: str, preset: str, files: {}):
+    files_path = os.path.join(config_directory, f'{preset}-files')
+    if not os.path.exists(files_path):
+        if len(files) > 0:
+            logging.fatal(f'Could not find required {preset}-files directory')
+            exit(1)
+        return
+    for path in files:
+        logging.debug(f'Applying {path}')
+        local_path = os.path.join(files_path, path[1:])
+        try:
+            os.lstat(local_path)
+            uid = int(files[path].split(':')[0])
+            gid = int(files[path].split(':')[1])
+            mode = int('100' + files[path].split(':')[2], 8)
+            try:
+                os.lstat(local_path)
+                os.remove(path)
+            except FileNotFoundError:
+                logging.debug(f'File {path} was not available on the system')
+            shutil.copy(local_path, path, follow_symlinks=False)
+            os.chown(path, uid, gid)
+            os.chmod(path, mode)
+        except FileNotFoundError:
+            logging.fatal(f'Could not find required {preset}-files{path} file')
+            exit(1)

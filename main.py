@@ -7,7 +7,8 @@ import click
 from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
 from defaults import default_config_directory, default_exclude_files
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
-    get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, used_exclude_files
+    get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, used_exclude_files, \
+    save_system_files, apply_system_files
 
 
 def setup_logging(verbose: bool):
@@ -104,6 +105,9 @@ def system_save(verbose, config_directory, preset):
     logging.info(
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 
+    logging.info(f'Saving {len(config.files)} system configuration files')
+    save_system_files(config_directory, preset, config.files)
+
     write_missing_system_config(
         config_directory,
         preset,
@@ -152,6 +156,9 @@ def system_apply(verbose, config_directory, no_confirm, preset):
             f'Detected {len(installed_not_listed_packages)} packages that are not listed in the config but installed. '
             f'Proceeding to remove them.')
         package_manager.remove_packages(installed_not_listed_packages, no_confirm)
+
+    logging.info(f'Applying {len(config.files)} system configuration files')
+    apply_system_files(config_directory, preset, config.files)
 
 
 @click.group()
