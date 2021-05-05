@@ -3,26 +3,25 @@ import subprocess
 
 import yaml
 
-from helpers import get_system_package_manager
 
-
-def common_redundant_packages(package):
+def test_redundant():
     subprocess.run(['python', 'main.py', 'system', 'save'])
     assert not os.path.exists('system_redundant.yaml')
 
     with open('system.yaml', 'w') as file:
-        file.write(yaml.dump({'packages': ['idonotexist']}))
+        file.write(yaml.dump({'files': {'/etc/test.txt': '0:0:644'}}))
     subprocess.run(['python', 'main.py', 'system', 'save'])
     with open('system_redundant.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
-        assert len(document['packages']) == 1
+        assert len(document['files']) == 1
 
-    get_system_package_manager().install_packages([package], True)
+    with open('/etc/test.txt', 'w') as file:
+        file.write('bla')
     os.remove('system.yaml')
     subprocess.run(['python', 'main.py', 'system', 'save'])
     os.rename('system_missing.yaml', 'system.yaml')
-    get_system_package_manager().remove_packages([package], True)
+    os.remove('/etc/test.txt')
     subprocess.run(['python', 'main.py', 'system', 'save'])
     with open('system_redundant.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
-        assert len(document['packages']) == 1
+        assert len(document['files']) == 1

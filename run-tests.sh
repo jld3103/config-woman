@@ -65,7 +65,7 @@ RUN pip install -r requirements.txt
 COPY $name $name
 CMD ["pytest", "$name"]
 EOF
-    image_name="config-woman-${name//.py/}"
+    image_name="config-woman-${name//.py/}-$os"
     docker build "$dir" -t "$image_name" -q >/dev/null
     rm -rf "$dir/Dockerfile"
     echo "$(tput bold)$(tput setaf 4)Running $name on $os$(tput sgr0)"
