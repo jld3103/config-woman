@@ -40,8 +40,7 @@ def load_config(mode: str, config_directory: str, preset: str):
         if 'packages' in document:
             packages = document['packages']
         if 'files' in document:
-            for path in document['files']:
-                files[path] = document['files'][path]
+            files = document['files']
         if 'exclude_files' in document:
             exclude_files = document['exclude_files']
         return Config(mode, packages, files, exclude_files)
