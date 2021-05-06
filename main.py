@@ -4,11 +4,11 @@ import sys
 
 import click
 
-from config import load_system_config, write_missing_system_config, Config, write_redundant_system_config
-from defaults import default_config_directory, default_exclude_files
+from config import load_config, write_missing_config, Config, write_redundant_config
+from defaults import default_config_directory, default_system_exclude_files, default_user_exclude_files
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
     get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, used_exclude_files, \
-    save_system_files, apply_system_files
+    save_files, apply_files, get_available_not_listed_files, get_listed_not_available_files
 
 
 def setup_logging(verbose: bool):
@@ -43,11 +43,14 @@ no_confirm_option = click.option(
     is_flag=True,
     help='Confirm package install/remove actions',
 )
-preset_argument = click.argument(
-    'preset',
-    envvar='PRESET',
-    default='default'
-)
+
+
+def preset_argument(mode):
+    return click.argument(
+        'preset',
+        envvar='PRESET',
+        default=f'default_{mode}'
+    )
 
 
 @click.group()
@@ -65,12 +68,12 @@ def system():
 @click.command(name='save')
 @verbose_option
 @config_directory_option
-@preset_argument
+@preset_argument('system')
 def system_save(verbose, config_directory, preset):
     setup_logging(verbose)
 
     package_manager = get_system_package_manager()
-    config = load_system_config(config_directory, preset)
+    config = load_config('system', config_directory, preset)
 
     installed_not_listed_packages: [str] = get_installed_not_listed_packages(config.packages, package_manager)
     logging.info(
@@ -82,7 +85,7 @@ def system_save(verbose, config_directory, preset):
 
     modified_not_listed_files: {} = get_modified_not_listed_files(
         config,
-        default_exclude_files + config.exclude_files + package_manager.exclude_files,
+        default_system_exclude_files + config.exclude_files + package_manager.exclude_files,
         package_manager.get_registered_files(),
         package_manager.hash_method,
     )
@@ -91,12 +94,11 @@ def system_save(verbose, config_directory, preset):
 
     listed_not_modified_files: {} = get_listed_not_modified_files(
         config,
-        default_exclude_files + config.exclude_files + package_manager.exclude_files,
+        default_system_exclude_files + config.exclude_files + package_manager.exclude_files,
         package_manager.get_registered_files(),
         package_manager.hash_method,
     )
-    logging.info(
-        f'Detected {len(listed_not_modified_files)} files that are listed in the config but not modified.')
+    logging.info(f'Detected {len(listed_not_modified_files)} files that are listed in the config but not modified.')
 
     listed_not_used_exclude_files = []
     for exclude_file in config.exclude_files:
@@ -106,21 +108,23 @@ def system_save(verbose, config_directory, preset):
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 
     logging.info(f'Saving {len(config.files)} system configuration files')
-    save_system_files(config_directory, preset, config.files)
+    save_files(config_directory, preset, config.files, '/')
 
-    write_missing_system_config(
+    write_missing_config(
         config_directory,
         preset,
         Config(
+            'system',
             installed_not_listed_packages,
             modified_not_listed_files,
             [],
         ),
     )
-    write_redundant_system_config(
+    write_redundant_config(
         config_directory,
         preset,
         Config(
+            'system',
             listed_not_installed_packages,
             listed_not_modified_files,
             listed_not_used_exclude_files,
@@ -132,12 +136,12 @@ def system_save(verbose, config_directory, preset):
 @verbose_option
 @config_directory_option
 @no_confirm_option
-@preset_argument
+@preset_argument('system')
 def system_apply(verbose, config_directory, no_confirm, preset):
     setup_logging(verbose)
 
     package_manager = get_system_package_manager()
-    config = load_system_config(config_directory, preset)
+    config = load_config('system', config_directory, preset)
 
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
     if len(listed_not_installed_packages) == 0:
@@ -158,7 +162,7 @@ def system_apply(verbose, config_directory, no_confirm, preset):
         package_manager.remove_packages(installed_not_listed_packages, no_confirm)
 
     logging.info(f'Applying {len(config.files)} system configuration files')
-    apply_system_files(config_directory, preset, config.files)
+    apply_files(config_directory, preset, config.files, '/')
 
 
 @click.group()
@@ -169,16 +173,69 @@ def user():
 @click.command(name='save')
 @verbose_option
 @config_directory_option
-def user_save(verbose):
+@preset_argument('user')
+def user_save(verbose, config_directory, preset):
     setup_logging(verbose)
+
+    config = load_config('user', config_directory, preset)
+
+    available_not_listed_files: {} = get_available_not_listed_files(
+        config,
+        default_user_exclude_files + config.exclude_files,
+    )
+    logging.info(
+        f'Detected {len(available_not_listed_files)} files that are available but not listed in the config.')
+
+    listed_not_available_files: {} = get_listed_not_available_files(
+        config,
+        default_user_exclude_files + config.exclude_files,
+    )
+    logging.info(f'Detected {len(listed_not_available_files)} files that are listed in the config but not available.')
+
+    listed_not_used_exclude_files = []
+    for exclude_file in config.exclude_files:
+        if exclude_file not in list(dict.fromkeys(used_exclude_files)):
+            listed_not_used_exclude_files.append(exclude_file)
+    logging.info(
+        f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
+
+    logging.info(f'Saving {len(config.files)} user configuration files')
+    save_files(config_directory, preset, config.files, os.path.expanduser('~'))
+
+    write_missing_config(
+        config_directory,
+        preset,
+        Config(
+            'user',
+            [],
+            available_not_listed_files,
+            [],
+        ),
+    )
+    write_redundant_config(
+        config_directory,
+        preset,
+        Config(
+            'user',
+            [],
+            listed_not_available_files,
+            listed_not_used_exclude_files,
+        ),
+    )
     pass
 
 
 @click.command(name='apply')
 @verbose_option
 @config_directory_option
-def user_apply(verbose):
+@preset_argument('user')
+def user_apply(verbose, config_directory, preset):
     setup_logging(verbose)
+
+    config = load_config('user', config_directory, preset)
+
+    logging.info(f'Applying {len(config.files)} user configuration files')
+    apply_files(config_directory, preset, config.files, os.path.expanduser('~'))
     pass
 
 

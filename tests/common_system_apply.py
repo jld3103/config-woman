@@ -16,14 +16,14 @@ def common_apply(package):
     with open('system.yaml', 'w') as file:
         packages = previous_packages.copy()
         packages.append(package)
-        file.write(yaml.dump({'packages': packages}))
+        file.write(yaml.dump({'mode': 'system', 'packages': packages}))
     subprocess.run(['python', 'main.py', 'system', 'apply', '--no-confirm'])
     new_packages = get_system_package_manager().get_packages()
     assert len(new_packages) == len(previous_packages) + 1
     assert package in new_packages
 
     with open('system.yaml', 'w') as file:
-        file.write(yaml.dump({'packages': previous_packages}))
+        file.write(yaml.dump({'mode': 'system', 'packages': previous_packages}))
 
     subprocess.run(['python', 'main.py', 'system', 'apply', '--no-confirm'])
     new_packages = get_system_package_manager().get_packages()

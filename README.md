@@ -14,16 +14,18 @@ The main features I want:
 - [x] High speed operation
 - [x] Portability to other package managers than `pacman`: `apt` already supported, more will follow
 - [ ] Secret management so your valuable access keys and passwords won't be leaked via the config state
-- [ ] User dotfile management
+- [x] User dotfile management
 
 ## Usage
 
 Create a venv using `python3 -m venv ./venv` and then activate it via `source venv/bin/activate`. Install the
 dependencies using `pip3 install -r requirements.txt`.
 
-### Save system state
+### System mode
 
-The default preset is named `default`:
+#### Save system state to config
+
+The default preset for system mode is named `default_system`:
 
 ```
 python3 main.py system save [preset]
@@ -40,21 +42,43 @@ system. You will very likely want to exclude files and directories from the conf
 the `exclude_files` field of `[preset].yaml`. You probably should start with the excluding, because that will already
 remove a lot of files that you probably don't want to save in your config state.
 
-The content of the files that you list in `[preset].yaml` will be mirrored to `.config/config-woman/[preset]-files/`.
+The content of the files that you list in `[preset].yaml` will be mirrored to `.config/config-woman/[preset]_files/`.
 Owner, group and mode will be saved and later applied properly.
 
 Just re-run the command to see what is left to do to come to a clean state.
 
 Later on when you remove packages and files from your system and run the save command again you might have packages,
-files and exclude rules listed in the `system_redundant.yaml` file.  
+files and exclude rules listed in the `[preset]_redundant.yaml` file.  
 That means those are listed in your config, but you don't have them installed/on the system/used to exclude files.
 Either you apply the config state to make your system compliant to the config state or remove those from
-the `system.yaml` file to make your config state compliant to the system state.
+the `[preset].yaml` file to make your config state compliant to the system state.
 
-### Apply config state
+#### Apply system config to system state
 
 ```
 python3 main.py system apply [preset]
+```
+
+This is basically the reverse of saving. Same rules apply.
+
+### User mode
+
+#### Save user state to config
+
+The default preset for system mode is named `default_user`:
+
+```
+python3 main.py user save [preset]
+```
+
+This basically does the same as system saving, but without packages, and it only looks at files in `.config`, and files
+in `~/` that start with a `.`.  
+All the same rules apply, except that path are relative to `~/`.
+
+#### Apply user config to user state
+
+```
+python3 main.py user apply [preset]
 ```
 
 This is basically the reverse of saving. Same rules apply.

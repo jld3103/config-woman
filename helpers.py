@@ -8,7 +8,7 @@ import distro
 from config import Config
 from package_manager.apt import Apt
 from package_manager.pacman import Pacman
-from utils import file_exists
+from utils import file_exists, file_info
 
 used_exclude_files = []
 
@@ -113,12 +113,7 @@ def get_modified_not_listed_files(config: Config, exclude_files: [str], register
     files = {}
     for file in modified_files:
         if file not in config.files:
-            try:
-                stat_info = os.stat(file, follow_symlinks=False)
-                files[file] = f'{stat_info.st_uid}:{stat_info.st_gid}:{oct(stat_info.st_mode)[-3:]}'
-            except FileNotFoundError:
-                logging.fatal(f'Could not find: {file}. It is very likely a dead symlink')
-                exit(1)
+            files[file] = file_info(file)
 
     return files
 
@@ -171,46 +166,118 @@ def verify_hash(path, should_hash_sum, hash_method):
     return is_hash_sum == should_hash_sum
 
 
-def save_system_files(config_directory: str, preset: str, files: {}):
-    files_path = os.path.join(config_directory, f'{preset}-files')
+def save_files(config_directory: str, preset: str, files: {}, relative_path: str):
+    files_path = os.path.join(config_directory, f'{preset}_files')
     if os.path.exists(files_path):
         shutil.rmtree(files_path)
     os.mkdir(files_path)
     stat_info = os.stat(os.path.join(config_directory, '..'))
     for path in files:
         logging.debug(f'Saving {path}')
-        local_path = os.path.join(files_path, path[1:])
+        local_path = os.path.join(files_path, path.strip('/'))
         local_dir = os.path.dirname(local_path)
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
-        if file_exists(path, follow_symlinks=False):
-            shutil.copy(path, local_path, follow_symlinks=False)
+        absolute_path = os.path.join(relative_path, path)
+        if file_exists(absolute_path, follow_symlinks=False):
+            shutil.copy(absolute_path, local_path, follow_symlinks=False)
             if not os.path.islink(local_path):
                 # So we are not annoying with the permissions for users
                 os.chown(local_path, stat_info.st_uid, stat_info.st_gid)
 
 
-def apply_system_files(config_directory: str, preset: str, files: {}):
-    files_path = os.path.join(config_directory, f'{preset}-files')
+def apply_files(config_directory: str, preset: str, files: {}, relative_path: str):
+    files_path = os.path.join(config_directory, f'{preset}_files')
     if not os.path.exists(files_path):
         if len(files) > 0:
-            logging.fatal(f'Could not find required {preset}-files directory')
+            logging.fatal(f'Could not find required {preset}_files directory')
             exit(1)
         return
     for path in files:
         logging.debug(f'Applying {path}')
-        local_path = os.path.join(files_path, path[1:])
+        local_path = os.path.join(files_path, path.strip('/'))
         if file_exists(local_path, follow_symlinks=False):
             uid = int(files[path].split(':')[0])
             gid = int(files[path].split(':')[1])
             mode = int('100' + files[path].split(':')[2], 8)
-            if file_exists(path, follow_symlinks=False):
-                os.remove(path)
+            absolute_path = os.path.join(relative_path, path)
+            if file_exists(absolute_path, follow_symlinks=False):
+                os.remove(absolute_path)
             else:
                 logging.debug(f'File {path} was not available on the system')
-            shutil.copy(local_path, path, follow_symlinks=False)
-            os.chown(path, uid, gid)
-            os.chmod(path, mode)
+            shutil.copy(local_path, absolute_path, follow_symlinks=False)
+            try:
+                os.chown(absolute_path, uid, gid)
+            except PermissionError:
+                logging.warning(
+                    f'Unable to chown {path}. This could be because it is a symlink or because you have set the wrong '
+                    f'permissions on the file')
+            try:
+                os.chmod(absolute_path, mode)
+            except PermissionError:
+                logging.warning(
+                    f'Unable to chmod {path}. This could be because it is a symlink or because you have set the wrong '
+                    f'permissions on the file')
+
         else:
-            logging.fatal(f'Could not find required {preset}-files{path} file')
+            logging.fatal(f'Could not find required {preset}_files{path} file')
             exit(1)
+
+
+def get_available_not_listed_files(config: Config, exclude_files: [str]):
+    not_listed_files = []
+    home_dir = os.path.expanduser('~')
+    all_files = []
+    for name in os.listdir(home_dir):
+        if name.startswith('.'):
+            if os.path.isfile(os.path.join(home_dir, name)):
+                all_files.append(os.path.join(home_dir, name))
+    for root, _, files in os.walk(os.path.join(home_dir, '.config')):
+        for file in files:
+            all_files.append(os.path.join(root, file))
+
+    for path in all_files:
+        skip = False
+        for exclude_file in exclude_files:
+            if path.startswith(os.path.join(home_dir, exclude_file)):
+                used_exclude_files.append(exclude_file)
+                skip = True
+                break
+        if skip:
+            continue
+        listed = False
+        for file in config.files:
+            if os.path.join(home_dir, file) == path:
+                listed = True
+                break
+        if not listed:
+            not_listed_files.append(path)
+
+    files = {}
+    for file in not_listed_files:
+        if file not in config.files:
+            files[os.path.relpath(file, home_dir)] = file_info(file)
+
+    return files
+
+
+def get_listed_not_available_files(config: Config, exclude_files: [str]):
+    not_available_files = []
+    home_dir = os.path.expanduser('~')
+
+    for path in config.files:
+        path = os.path.join(home_dir, path)
+        remove = False
+        for exclude_file in exclude_files:
+            if path.startswith(exclude_file):
+                used_exclude_files.append(exclude_file)
+                remove = True
+                break
+        if remove:
+            not_available_files.append(path)
+            continue
+
+        if not file_exists(path, follow_symlinks=False):
+            not_available_files.append(os.path.relpath(path, home_dir))
+
+    return not_available_files

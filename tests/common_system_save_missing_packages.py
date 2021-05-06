@@ -16,7 +16,7 @@ def common_missing_packages(package1, package2):
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         default_missing_count = len(document['packages'])
     with open('system.yaml', 'w') as file:
-        file.write(yaml.dump({'packages': [package1]}))
+        file.write(yaml.dump({'mode': 'system', 'packages': [package1]}))
     subprocess.run(['python', 'main.py', 'system', 'save'])
     with open('system_missing.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)

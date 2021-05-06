@@ -11,7 +11,7 @@ def common_redundant_packages(package):
     assert not os.path.exists('system_redundant.yaml')
 
     with open('system.yaml', 'w') as file:
-        file.write(yaml.dump({'packages': ['idonotexist']}))
+        file.write(yaml.dump({'mode': 'system', 'packages': ['idonotexist']}))
     subprocess.run(['python', 'main.py', 'system', 'save'])
     with open('system_redundant.yaml', 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
