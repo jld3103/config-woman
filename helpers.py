@@ -70,14 +70,7 @@ def get_etc_files(exclude_files: [str]):
     for root, sub_dirs, files in os.walk('/etc'):
         for file in files:
             file_path = os.path.join(root, file)
-            do_exclude = False
-            for exclude_file in exclude_files:
-                if file_path.startswith(exclude_file):
-                    used_exclude_files.append(exclude_file)
-                    do_exclude = True
-                    logging.debug(f'Excluding {file_path} because of exclude rule {exclude_file}')
-                    break
-            if not do_exclude:
+            if not check_is_excluded(file_path, exclude_files):
                 all_files.append(file_path)
     return all_files
 
@@ -87,13 +80,7 @@ def get_modified_not_listed_files(config: Config, exclude_files: [str], register
     new_files = get_etc_files(exclude_files).copy()
 
     for path in registered_files:
-        skip = False
-        for exclude_file in exclude_files:
-            if path.startswith(exclude_file):
-                used_exclude_files.append(exclude_file)
-                skip = True
-                break
-        if skip:
+        if check_is_excluded(path, exclude_files):
             continue
         if path in new_files:
             new_files.remove(path)
@@ -122,13 +109,7 @@ def get_listed_not_modified_files(config: Config, exclude_files: [str], register
     not_modified_files = []
 
     for path in config.files:
-        remove = False
-        for exclude_file in exclude_files:
-            if path.startswith(exclude_file):
-                used_exclude_files.append(exclude_file)
-                remove = True
-                break
-        if remove:
+        if check_is_excluded(path, exclude_files):
             not_modified_files.append(path)
             continue
 
@@ -228,6 +209,11 @@ def get_available_not_listed_files(config: Config, exclude_files: [str]):
     not_listed_files = []
     home_dir = os.path.expanduser('~')
     all_files = []
+
+    exclude_files_expanded = []
+    for exclude_file in exclude_files:
+        exclude_files_expanded.append(os.path.join(home_dir, exclude_file))
+
     for name in os.listdir(home_dir):
         if name.startswith('.'):
             if os.path.isfile(os.path.join(home_dir, name)):
@@ -237,13 +223,7 @@ def get_available_not_listed_files(config: Config, exclude_files: [str]):
             all_files.append(os.path.join(root, file))
 
     for path in all_files:
-        skip = False
-        for exclude_file in exclude_files:
-            if path.startswith(os.path.join(home_dir, exclude_file)):
-                used_exclude_files.append(exclude_file)
-                skip = True
-                break
-        if skip:
+        if check_is_excluded(path, exclude_files_expanded):
             continue
         listed = False
         for file in config.files:
@@ -267,13 +247,7 @@ def get_listed_not_available_files(config: Config, exclude_files: [str]):
 
     for path in config.files:
         path = os.path.join(home_dir, path)
-        remove = False
-        for exclude_file in exclude_files:
-            if path.startswith(exclude_file):
-                used_exclude_files.append(exclude_file)
-                remove = True
-                break
-        if remove:
+        if check_is_excluded(path, exclude_files):
             not_available_files.append(path)
             continue
 
@@ -281,3 +255,12 @@ def get_listed_not_available_files(config: Config, exclude_files: [str]):
             not_available_files.append(os.path.relpath(path, home_dir))
 
     return not_available_files
+
+
+def check_is_excluded(path: str, exclude_files: [str]) -> bool:
+    for exclude_file in exclude_files:
+        if path.startswith(exclude_file):
+            used_exclude_files.append(exclude_file)
+            logging.debug(f'Excluding {path} because of exclude rule {exclude_file}')
+            return True
+    return False
