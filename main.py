@@ -7,8 +7,9 @@ import click
 from config import load_config, write_missing_config, Config, write_redundant_config
 from defaults import default_config_directory, default_system_exclude_files, default_user_exclude_files
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
-    get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, used_exclude_files, \
-    save_files, apply_files, get_available_not_listed_files, get_listed_not_available_files
+    get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, save_files, apply_files, \
+    get_available_not_listed_files, get_listed_not_available_files, \
+    get_listed_not_used_exclude_files
 
 
 def setup_logging(verbose: bool):
@@ -100,10 +101,7 @@ def system_save(verbose, config_directory, preset):
     )
     logging.info(f'Detected {len(listed_not_modified_files)} files that are listed in the config but not modified.')
 
-    listed_not_used_exclude_files = []
-    for exclude_file in config.exclude_files:
-        if exclude_file not in list(dict.fromkeys(used_exclude_files)):
-            listed_not_used_exclude_files.append(exclude_file)
+    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config)
     logging.info(
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 
@@ -192,10 +190,7 @@ def user_save(verbose, config_directory, preset):
     )
     logging.info(f'Detected {len(listed_not_available_files)} files that are listed in the config but not available.')
 
-    listed_not_used_exclude_files = []
-    for exclude_file in config.exclude_files:
-        if exclude_file not in list(dict.fromkeys(used_exclude_files)):
-            listed_not_used_exclude_files.append(exclude_file)
+    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config)
     logging.info(
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 

@@ -10,8 +10,8 @@ else:
     default_config_directory = os.path.join(appdirs.user_config_dir(), 'config-woman')
 
 default_system_exclude_files = [
-    '/etc/ca-certificates',
-    '/etc/ssl',
+    '/etc/ca-certificates/',
+    '/etc/ssl/',
     '/etc/.updated'
 ]
 default_user_exclude_files = [
@@ -19,7 +19,7 @@ default_user_exclude_files = [
     '.python_history',
     '.ICEauthority',
     '.Xauthority',
-    '.xsession-errors',
+    '.xsession-errors*',
     '.pulse-cookie',
-    '.config/config-woman'
+    '.config/config-woman/'
 ]

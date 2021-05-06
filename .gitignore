@@ -4,4 +4,4 @@ __pycache__/
 venv/
 *.egg-info/
 *.yaml
-*-files/
+*_files/

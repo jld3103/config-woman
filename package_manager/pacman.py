@@ -9,7 +9,7 @@ from utils import file_exists
 
 class Pacman(PackageManager):
     name = "pacman"
-    exclude_files = ['/etc/pacman.d/gnupg']
+    exclude_files = ['/etc/pacman.d/gnupg/']
     hash_method = 'sha256'
     updates_fetched = False
 

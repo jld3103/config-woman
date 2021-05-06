@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import re
 import shutil
 
 import distro
@@ -259,8 +260,17 @@ def get_listed_not_available_files(config: Config, exclude_files: [str]):
 
 def check_is_excluded(path: str, exclude_files: [str]) -> bool:
     for exclude_file in exclude_files:
-        if path.startswith(exclude_file):
-            used_exclude_files.append(exclude_file)
+        if re.match(f'^{re.sub(r"/$", "/.*", exclude_file.replace("*", ".*"))}$', path):
+            if exclude_file not in used_exclude_files:
+                used_exclude_files.append(exclude_file)
             logging.debug(f'Excluding {path} because of exclude rule {exclude_file}')
             return True
     return False
+
+
+def get_listed_not_used_exclude_files(config):
+    listed_not_used_exclude_files = []
+    for exclude_file in config.exclude_files:
+        if os.path.join(os.path.expanduser('~'), exclude_file) not in list(dict.fromkeys(used_exclude_files)):
+            listed_not_used_exclude_files.append(exclude_file)
+    return listed_not_used_exclude_files
