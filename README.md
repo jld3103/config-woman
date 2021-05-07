@@ -40,9 +40,15 @@ The config state you want to have will live in `[preset].yaml`, while everything
 listed in your config yet, lives in `[preset]_missing.yaml`.
 
 You should now start sorting packages and files from `[preset]_missing.yaml` to `[preset].yaml` or remove them from your
-system. You will very likely want to exclude files and directories from the config. To do that just list them in
-the `exclude_files` field of `[preset].yaml`. You probably should start with the excluding, because that will already
-remove a lot of files that you probably don't want to save in your config state.
+system.
+
+You will very likely want to exclude files and directories from the config. See [exclude files](#exclude-files)
+for an explanation. You probably should start with the excluding, because that will already remove a lot of files that
+you probably don't want to save in your config state.
+
+Likely there will be values in your config files that you don't want to have in the config state. You can remove those
+lines by using content filters. See [content filters](#content-filters).  
+A system for storing secrets like passwords and API keys will be added soon.
 
 The content of the files that you list in `[preset].yaml` will be mirrored to `.config/config-woman/[preset]_files/`.
 Owner, group and mode will be saved and later applied properly.
@@ -84,6 +90,33 @@ python3 main.py user apply [preset]
 ```
 
 This is basically the reverse of saving. Same rules apply.
+
+#### Exclude files
+
+To exclude files list them in the `exclude_files` list like this:
+
+```yaml
+exclude_files:
+  - /etc/file.txt # To exclude a single file
+  - /etc/dir/ # To exclude all files in the directory
+  - /etc/*/pattern* # To exclude by matching pattern
+```
+
+Complete python regex is supported, but be aware that `*`'s are replaced with `.*`'s to better fit the usual POSIX
+globbing.
+
+### Content filters
+
+To filter the content of your config files create filters in the `content_filters` list like this:
+
+```yaml
+content_filters:
+  - /etc/file.txt: .*api-key.* # To exclude all lines that contain 'api-key'
+  - /etc/file.txt: Height.* # To exclude all lines that start with 'Height'
+```
+
+Same rules for path matching apply as for [exclude files](#exclude-files).  
+Patterns for line matching are pure python regex.
 
 ### Note
 
