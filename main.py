@@ -9,7 +9,7 @@ from defaults import default_config_directory, default_system_exclude_files, def
 from helpers import get_installed_not_listed_packages, get_listed_not_installed_packages, get_system_package_manager, \
     get_base_distribution, get_modified_not_listed_files, get_listed_not_modified_files, save_files, apply_files, \
     get_available_not_listed_files, get_listed_not_available_files, \
-    get_listed_not_used_exclude_files
+    get_listed_not_used_exclude_files, get_listed_not_used_content_filters
 
 
 def setup_logging(verbose: bool):
@@ -101,12 +101,16 @@ def system_save(verbose, config_directory, preset):
     )
     logging.info(f'Detected {len(listed_not_modified_files)} files that are listed in the config but not modified.')
 
-    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config)
+    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config, '/')
     logging.info(
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 
+    listed_not_used_content_filters = get_listed_not_used_content_filters(config)
+    logging.info(
+        f'Detected {len(listed_not_used_content_filters)} config filters that are listed in the config but not used.')
+
     logging.info(f'Saving {len(config.files)} system configuration files')
-    save_files(config_directory, preset, config.files, '/')
+    save_files(config_directory, preset, config.files, config.content_filters, '/')
 
     write_missing_config(
         config_directory,
@@ -115,6 +119,7 @@ def system_save(verbose, config_directory, preset):
             'system',
             installed_not_listed_packages,
             modified_not_listed_files,
+            [],
             [],
         ),
     )
@@ -126,6 +131,7 @@ def system_save(verbose, config_directory, preset):
             listed_not_installed_packages,
             listed_not_modified_files,
             listed_not_used_exclude_files,
+            listed_not_used_content_filters,
         ),
     )
 
@@ -190,12 +196,16 @@ def user_save(verbose, config_directory, preset):
     )
     logging.info(f'Detected {len(listed_not_available_files)} files that are listed in the config but not available.')
 
-    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config)
+    listed_not_used_exclude_files = get_listed_not_used_exclude_files(config, os.path.expanduser('~'))
     logging.info(
         f'Detected {len(listed_not_used_exclude_files)} exclude rules that are listed in the config but not used.')
 
     logging.info(f'Saving {len(config.files)} user configuration files')
-    save_files(config_directory, preset, config.files, os.path.expanduser('~'))
+    save_files(config_directory, preset, config.files, config.content_filters, os.path.expanduser('~'))
+
+    listed_not_used_content_filters = get_listed_not_used_content_filters(config)
+    logging.info(
+        f'Detected {len(listed_not_used_content_filters)} content filters that are listed in the config but not used.')
 
     write_missing_config(
         config_directory,
@@ -204,6 +214,7 @@ def user_save(verbose, config_directory, preset):
             'user',
             [],
             available_not_listed_files,
+            [],
             [],
         ),
     )
@@ -215,6 +226,7 @@ def user_save(verbose, config_directory, preset):
             [],
             listed_not_available_files,
             listed_not_used_exclude_files,
+            listed_not_used_content_filters,
         ),
     )
     pass

@@ -14,7 +14,7 @@ The main features I want:
 - [x] High speed operation
 - [x] Portability to other package managers than `pacman`: `apt` already supported, more will follow
 - [ ] Secret management so your valuable access keys and passwords won't be leaked via the config state
-- [ ] File filtering so not everything of the config files will be saved. Useful for values that are irrelevant and
+- [x] File filtering so not everything of the config files will be saved. Useful for values that are irrelevant and
   change often
 - [x] User dotfile management
 

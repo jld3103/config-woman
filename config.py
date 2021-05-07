@@ -15,6 +15,7 @@ def load_config(mode: str, config_directory: str, preset: str):
                 file.write(yaml.dump({
                     'mode': mode,
                     'exclude_files': [],
+                    'content_filters': {},
                     'files': {},
                     'packages': []
                 },
@@ -23,10 +24,11 @@ def load_config(mode: str, config_directory: str, preset: str):
                 file.write(yaml.dump({
                     'mode': mode,
                     'exclude_files': [],
+                    'content_filters': {},
                     'files': {},
                 },
                     default_flow_style=False, sort_keys=False))
-        return Config(mode, [], [], [])
+        return Config(mode, [], {}, [], {})
     with open(file_path, 'r') as file:
         document = yaml.load(file.read(), Loader=yaml.FullLoader)
         if document['mode'] != mode:
@@ -36,14 +38,17 @@ def load_config(mode: str, config_directory: str, preset: str):
             exit(1)
         packages = []
         files = {}
+        content_filters = {}
         exclude_files = []
         if 'packages' in document:
             packages = document['packages']
         if 'files' in document:
             files = document['files']
+        if 'content_filters' in document:
+            content_filters = document['content_filters']
         if 'exclude_files' in document:
             exclude_files = document['exclude_files']
-        return Config(mode, packages, files, exclude_files)
+        return Config(mode, packages, files, exclude_files, content_filters)
 
 
 def write_missing_config(config_directory, preset, missing_config):
@@ -60,6 +65,8 @@ def _write_config(file_path, config):
     data = {'mode': config.mode}
     if len(config.exclude_files) > 0:
         data['exclude_files'] = config.exclude_files
+    if len(config.content_filters) > 0:
+        data['content_filters'] = config.content_filters
     if len(config.files) > 0:
         data['files'] = config.files
     if len(config.packages) > 0:
@@ -72,8 +79,9 @@ def _write_config(file_path, config):
 
 
 class Config:
-    def __init__(self, mode: str, packages: [str], files: {}, exclude_files: [str]):
+    def __init__(self, mode: str, packages: [str], files: {}, exclude_files: [str], content_filters: []):
         self.mode = mode
         self.packages = packages
         self.files = files
         self.exclude_files = exclude_files
+        self.content_filters = content_filters

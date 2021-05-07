@@ -12,6 +12,7 @@ from package_manager.pacman import Pacman
 from utils import file_exists, file_info
 
 used_exclude_files = []
+used_content_filters = []
 
 
 def get_base_distribution():
@@ -148,7 +149,7 @@ def verify_hash(path, should_hash_sum, hash_method):
     return is_hash_sum == should_hash_sum
 
 
-def save_files(config_directory: str, preset: str, files: {}, relative_path: str):
+def save_files(config_directory: str, preset: str, files: {}, content_filters: [], relative_path: str):
     files_path = os.path.join(config_directory, f'{preset}_files')
     if os.path.exists(files_path):
         shutil.rmtree(files_path)
@@ -162,8 +163,16 @@ def save_files(config_directory: str, preset: str, files: {}, relative_path: str
             os.makedirs(local_dir)
         absolute_path = os.path.join(relative_path, path)
         if file_exists(absolute_path, follow_symlinks=False):
-            shutil.copy(absolute_path, local_path, follow_symlinks=False)
-            if not os.path.islink(local_path):
+            if os.path.islink(absolute_path):
+                shutil.copy(absolute_path, local_path, follow_symlinks=False)
+            else:
+                content = read_filtered_content(absolute_path, content_filters, relative_path)
+                if isinstance(content, str):
+                    with open(local_path, 'w') as file:
+                        file.write(content)
+                else:
+                    with open(local_path, 'wb') as file:
+                        file.write(content)
                 # So we are not annoying with the permissions for users
                 os.chown(local_path, stat_info.st_uid, stat_info.st_gid)
 
@@ -260,7 +269,7 @@ def get_listed_not_available_files(config: Config, exclude_files: [str]):
 
 def check_is_excluded(path: str, exclude_files: [str]) -> bool:
     for exclude_file in exclude_files:
-        if re.match(f'^{re.sub(r"/$", "/.*", exclude_file.replace("*", ".*"))}$', path):
+        if _path_match_pattern(path, exclude_file):
             if exclude_file not in used_exclude_files:
                 used_exclude_files.append(exclude_file)
             logging.debug(f'Excluding {path} because of exclude rule {exclude_file}')
@@ -268,9 +277,53 @@ def check_is_excluded(path: str, exclude_files: [str]) -> bool:
     return False
 
 
-def get_listed_not_used_exclude_files(config):
+def _path_match_pattern(path, pattern):
+    return re.match(f'^{re.sub(r"/$", "/.*", pattern.replace("*", ".*"))}$', path)
+
+
+def get_listed_not_used_exclude_files(config, relative_path):
     listed_not_used_exclude_files = []
     for exclude_file in config.exclude_files:
-        if os.path.join(os.path.expanduser('~'), exclude_file) not in list(dict.fromkeys(used_exclude_files)):
+        if os.path.join(relative_path, exclude_file) not in used_exclude_files:
             listed_not_used_exclude_files.append(exclude_file)
     return listed_not_used_exclude_files
+
+
+def read_filtered_content(path: str, content_filters: [], relative_path: str):
+    filtered_content = []
+    matching_content_filters = []
+    for content_filter in content_filters:
+        filter_path = list(content_filter.keys())[0]
+        if _path_match_pattern(path, os.path.join(relative_path, filter_path)):
+            matching_content_filters.append(content_filter)
+    try:
+        with open(path, 'r') as file:
+            content = file.read()
+            for line in content.split('\n'):
+                do_filter = False
+                for content_filter in matching_content_filters:
+                    if re.match(f'^{content_filter[list(content_filter.keys())[0]]}$', line):
+                        if path not in used_content_filters:
+                            used_content_filters.append(content_filter)
+                        do_filter = True
+                        break
+                if not do_filter:
+                    filtered_content.append(line)
+        return '\n'.join(filtered_content)
+    except UnicodeDecodeError:
+        with open(path, 'rb') as file:
+            return file.read()
+
+
+def get_listed_not_used_content_filters(config):
+    listed_not_used_content_filters = []
+    for content_filter1 in config.content_filters:
+        used = False
+        path1 = list(content_filter1.keys())[0]
+        for content_filter2 in used_content_filters:
+            path2 = list(content_filter2.keys())[0]
+            if path1 == path2 and content_filter1[path1] == content_filter2[path2]:
+                used = True
+        if not used:
+            listed_not_used_content_filters.append(content_filter1)
+    return listed_not_used_content_filters
