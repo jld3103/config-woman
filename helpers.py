@@ -196,6 +196,8 @@ def apply_files(config_directory: str, preset: str, files: {}, relative_path: st
                 os.remove(absolute_path)
             else:
                 logging.debug(f'File {path} was not available on the system')
+            if not file_exists(os.path.dirname(absolute_path), follow_symlinks=False):
+                os.makedirs(os.path.dirname(absolute_path))
             shutil.copy(local_path, absolute_path, follow_symlinks=False)
             try:
                 os.chown(absolute_path, uid, gid)
