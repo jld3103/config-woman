@@ -201,18 +201,17 @@ def apply_files(config_directory: str, preset: str, files: {}, relative_path: st
             shutil.copy(local_path, absolute_path, follow_symlinks=False)
             if not os.path.islink(absolute_path):
                 try:
-                    os.chown(absolute_path, uid, gid)
-                except PermissionError:
-                    logging.warning(
-                        f'Unable to chown {path}. This could be because it is a symlink or because you have set the '
-                        f'wrong permissions on the file')
-                try:
                     os.chmod(absolute_path, mode)
                 except PermissionError:
                     logging.warning(
                         f'Unable to chmod {path}. This could be because it is a symlink or because you have set the '
                         f'wrong permissions on the file')
-
+                try:
+                    os.chown(absolute_path, uid, gid)
+                except PermissionError:
+                    logging.warning(
+                        f'Unable to chown {path}. This could be because it is a symlink or because you have set the '
+                        f'wrong permissions on the file')
         else:
             logging.fatal(f'Could not find required {preset}_files{path} file')
             exit(1)
