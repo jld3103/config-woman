@@ -147,6 +147,9 @@ def system_apply(verbose, config_directory, no_confirm, preset):
     package_manager = get_system_package_manager()
     config = load_config('system', config_directory, preset)
 
+    logging.info(f'Applying {len(config.files)} system configuration files')
+    apply_files(config_directory, preset, config.files, '/')
+
     listed_not_installed_packages: [str] = get_listed_not_installed_packages(config.packages, package_manager)
     if len(listed_not_installed_packages) == 0:
         logging.info('Detected no packages that are listed in the config but not installed.')
@@ -164,9 +167,6 @@ def system_apply(verbose, config_directory, no_confirm, preset):
             f'Detected {len(installed_not_listed_packages)} packages that are not listed in the config but installed. '
             f'Proceeding to remove them.')
         package_manager.remove_packages(installed_not_listed_packages, no_confirm)
-
-    logging.info(f'Applying {len(config.files)} system configuration files')
-    apply_files(config_directory, preset, config.files, '/')
 
 
 @click.group()
