@@ -198,23 +198,32 @@ def apply_files(config_directory: str, preset: str, files: {}, relative_path: st
                 logging.debug(f'File {path} was not available on the system')
             if not file_exists(os.path.dirname(absolute_path), follow_symlinks=False):
                 os.makedirs(os.path.dirname(absolute_path))
+                current_path = os.path.dirname(absolute_path)
+                while current_path != os.path.abspath(relative_path):
+                    _set_permission(current_path, None, uid, gid)
+                    current_path = os.path.dirname(current_path)
             shutil.copy(local_path, absolute_path, follow_symlinks=False)
-            if not os.path.islink(absolute_path):
-                try:
-                    os.chmod(absolute_path, mode)
-                except PermissionError:
-                    logging.warning(
-                        f'Unable to chmod {path}. This could be because it is a symlink or because you have set the '
-                        f'wrong permissions on the file')
-                try:
-                    os.chown(absolute_path, uid, gid)
-                except PermissionError:
-                    logging.warning(
-                        f'Unable to chown {path}. This could be because it is a symlink or because you have set the '
-                        f'wrong permissions on the file')
+            _set_permission(absolute_path, mode, uid, gid)
         else:
             logging.fatal(f'Could not find required {preset}_files{path} file')
             exit(1)
+
+
+def _set_permission(path, mode, uid, gid):
+    if not os.path.islink(path):
+        if mode is not None:
+            try:
+                os.chmod(path, mode)
+            except PermissionError:
+                logging.warning(
+                    f'Unable to chmod {path}. This could be because it is a symlink or because you have set the '
+                    f'wrong permissions on the file')
+        try:
+            os.chown(path, uid, gid)
+        except PermissionError:
+            logging.warning(
+                f'Unable to chown {path}. This could be because it is a symlink or because you have set the '
+                f'wrong permissions on the file')
 
 
 def get_available_not_listed_files(config: Config, exclude_files: [str]):
