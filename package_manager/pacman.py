@@ -1,5 +1,6 @@
 import functools
 import gzip
+import logging
 import os.path
 import subprocess
 
@@ -37,10 +38,30 @@ class Pacman(PackageManager):
 
     def install_packages(self, packages: [str], no_confirm: bool):
         self.fetch_updates()
-        if no_confirm:
-            os.system(f'pacman -S {" ".join(packages)} --noconfirm')
-        else:
-            os.system(f'pacman -S {" ".join(packages)}')
+
+        regular_packages = packages.copy()
+        external_packages = []
+
+        code, out = subprocess.getstatusoutput(f'pacman -Si {" ".join(packages)}')
+        for line in out.split('\n'):
+            if line.startswith('error: package') and line.endswith('was not found'):
+                package = line.split('\'')[1]
+                regular_packages.remove(package)
+                external_packages.append(package)
+
+        if len(regular_packages) > 0:
+            if no_confirm:
+                os.system(f'pacman -S {" ".join(regular_packages)} --noconfirm')
+            else:
+                os.system(f'pacman -S {" ".join(regular_packages)}')
+
+        if len(external_packages) > 0:
+            logging.warning(
+                'You have some packages listed that are not available from the standard repositories.\nThey probably '
+                'are packages from the AUR. There is no standard way to install them, so you have to install them '
+                'manually.\nYou may install an AUR helper and install them with it: '
+                'https://wiki.archlinux.org/title/AUR_helpers#Pacman_wrappers')
+            logging.warning(f'The relevant packages are these: {" ".join(external_packages)}')
 
     def remove_packages(self, packages: [str], no_confirm: bool):
         if no_confirm:
